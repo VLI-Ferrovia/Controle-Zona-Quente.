@@ -165,7 +165,7 @@
 
       const hotList = lista.filter(z=>z.status==='EM ZONA QUENTE');
       const multiBox = document.getElementById('multiHotBox');
-      if(hotList.length>1){ const items = hotList.map(z=>`<li>${composeLine(z.Trecho, z.Criterio, z.Motivo)}</li>`).join(''); multiBox.innerHTML = `<div class='font-bold mb-1'>Trem dentro de mais de uma Zona Quente (${hotList.length}):</div><ul class='list-disc ml-6'>${items}</ul>`; multiBox.classList.remove('hidden'); } else { multiBox.classList.add('hidden'); multiBox.innerHTML=''; }
+      if(hotList.length>1){ const items = hotList.map(z=>`<li>${composeLine(z.Trecho, z.Criterio, z.Motivo)}</li>`).join(''); multiBox.innerHTML = `<div class='font-bold mb-1'>Composição em mais de uma Zona Quente (${hotList.length}):</div><ul class='list-disc ml-6'>${items}</ul>`; multiBox.classList.remove('hidden'); } else { multiBox.classList.add('hidden'); multiBox.innerHTML=''; }
 
       const zonasDiv=document.getElementById('zonasResultado'); const tbody=document.getElementById('zonasTableBody'); const countEl=document.getElementById('zonasCount'); tbody.innerHTML=''; zonasDiv.classList.remove('hidden');
       if(lista.length===0){ countEl.textContent='0 zonas'; tbody.innerHTML=`<tr><td colspan='8' class='text-center text-gray-600'>Sem zonas cadastradas para este posicionamento/filtro.</td></tr>`; return; }
