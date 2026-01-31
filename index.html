@@ -1,8 +1,8 @@
 
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head> 
-  <link rel="shortcut icon" href= "favicon (3).png"image/x-icon">
+<head>
+  <link rel="shortcut icon" href= "favicon_vl_logo_simples_final.png"image/x-icon">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Controle de Zona Quente</title>
@@ -10,12 +10,43 @@
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.10/dist/full.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    .result-train { background: linear-gradient(135deg, #1e40af, #3d3d3f); border-radius: 12px; padding: 16px; margin-top: 16px; color: #fff; text-align: center; font-weight: 600; }
-    .result-train.hot { background: linear-gradient(135deg, #7f1d1d, hsl(0, 84%, 60%)); box-shadow: 0 0 0 3px #ef4444 inset; }
+    .result-train { background: linear-gradient(135deg, #3072cb, #133869); border-radius: 12px; padding: 16px; margin-top: 16px; color: #fff; text-align: center; font-weight: 600; }
+    .result-train.hot { background: linear-gradient(135deg, #ff0000, #340101);  }
     .train-result-text { font-size: 1.1rem; margin: 12px 0; padding: 10px; background: rgba(255,255,255,.12); border-radius: 8px; font-family: monospace; word-break: break-word; }
     .badge-soft { display:inline-block; padding:4px 8px; border-radius:12px; background:#eef2ff; color:#1e3a8a; font-weight:600; }
     .uploader input[type=file] { display:none; }
   </style>
+  <style>
+  @keyframes piscar {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.25; }
+  }
+
+
+  @keyframes girar {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+
+<style>
+  .btn-vli-laranja {
+    background-color: #FF6A00; 
+    color: white;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .btn-vli-laranja:hover {
+    background-color: #e55d00; 
+  }
+</style>
+
 <style>
 .banner-full{width:100%; margin:0 auto; border-radius:8px; overflow:hidden}
 .banner-img{width:100%; height:auto; display:block}
@@ -61,9 +92,9 @@
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-        <button onclick="calcular('aumentando')" class="btn btn-warning btn-lg">🚆 Aumentando</button>
-        <button onclick="calcular('diminuindo')" class="btn btn-warning btn-lg">🚆 Diminuindo</button>
-      </div>
+  <button onclick="calcular('aumentando')" class="btn-vli-laranja">🚆 Aumentando</button>
+  <button onclick="calcular('diminuindo')" class="btn-vli-laranja">🚆 Diminuindo</button>
+</div>
 
       <div id="resultado" class="hidden">
         <div id="trainBanner" class="result-train">
@@ -113,7 +144,7 @@
             <table class="table table-zebra">
               <thead><tr>
                 <th>Status</th><th>Trecho</th><th>Início zona</th><th>Fim zona</th>
-                <th>Critério</th><th>Motivo</th><th>% trem na zona</th><th>Planilha</th>
+                <th>Critério</th><th>Motivo</th><th>% trem na zona</th><th></th>
               </tr></thead>
               <tbody id="zonasTableBody"></tbody>
             </table>
@@ -7182,13 +7213,18 @@ for (const z of lista) {
   const tr = document.createElement('tr');
 
 const bgStyle = isHot
-  ? 'background-color:  #cbced4; color: black;'
+  ? 'background-color:#cbced4;color:black;'
   : '';
 
 tr.innerHTML = `
-   <td style="${bgStyle}">
+  <td style="${bgStyle}">
     <strong>
-      ${isHot ? '🚨 ZONA QUENTE' : 'FORA'}
+      <div style="font-size:12px; display:flex; align-items:center; gap:6px;">
+        ${isHot
+          ? `<span data-anim style="display:inline-block; animation: piscar 0.9s ease-in-out infinite;">🚨</span>`
+          : '' }
+        <span>${isHot ? 'ZONA QUENTE' : 'FORA'}</span>
+      </div>
     </strong>
   </td>
 
