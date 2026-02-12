@@ -35,8 +35,6 @@
       padding: 20px;
     }
     
-    }
-    
     .config-btn {
       width: 52px;
       height: 52px;
@@ -92,7 +90,7 @@
       background: rgba(10, 20, 35, 0.5);
       border: 2px solid #0084ff;
       border-radius: 20px;
-      text-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
+      text-shadow: 0 0 30px rgba(87, 184, 240, 0.5);
       backdrop-filter: blur(10px);
     }
     
@@ -627,8 +625,7 @@
       <div id="zonasResultado" class="hidden">
         <div class="zones-container">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="zones-title">Zonas Quentes Encontradas Na SB</h2>
-            <span id="zonasCount" class="badge-soft"></span>
+            <h2 class="zones-title">Zonas Quentes</h2>
           </div>
           <div class="overflow-x-auto">
             <table class="table table-zebra">
@@ -7634,11 +7631,19 @@
     function formatKmMFromAbs(abs){ const km=Math.floor(abs/1000); const m=Math.round(abs%1000); return `${km}+${String(m).padStart(3,'0')}`; }
     
     function cleanText(txt){ const s = String(txt||'').trim().replace(/\s+/g,' '); return s; }
-    function composeLine(trecho, criterio, motivo){ const parts=[cleanText(trecho), cleanText(criterio), cleanText(motivo)].filter(Boolean); const uniq=[]; for(const p of parts){ if(!uniq.includes(p)) uniq.push(p); } return uniq.join(' — '); }
+    function sanitizeField(txt){ if(txt===undefined||txt===null) return ''; let s = String(txt).trim().replace(/\s+/g,' '); // remove common unwanted phrase: "regra de soma das sbs" (variações)
+      s = s.replace(/regra\s+de\s+soma(\s+das?)?(\s+sbs?)?/ig, '');
+      // remove leftover multiple spaces
+      s = s.replace(/\s+/g,' ').trim();
+      return s;
+    }
+    function composeLine(trecho, criterio, motivo){ const parts=[sanitizeField(trecho), sanitizeField(criterio), sanitizeField(motivo)].filter(Boolean); const uniq=[]; for(const p of parts){ if(!uniq.includes(p)) uniq.push(p); } return uniq.join(' — '); }
     
     let zonas=[]; let baseOrigem='embutida';
-    function setBaseStatus(){ const count=zonas.length; document.getElementById('baseStatus').textContent=`Base: ${baseOrigem} · Registros: ${count}`; }
-    (function(){ try{ const txt=document.getElementById('preloadedZones').textContent; zonas = JSON.parse(txt)||[]; }catch(e){ zonas=[]; } setBaseStatus(); })();
+    function setBaseStatus(){ const count=zonas.length; if(baseOrigem==='embutida'){ document.getElementById('baseStatus').textContent=`Registros: ${count}`; } else { document.getElementById('baseStatus').textContent=`Base: ${baseOrigem} · Registros: ${count}`; } }
+    (function(){ try{ const txt=document.getElementById('preloadedZones').textContent; zonas = JSON.parse(txt)||[]; // sanitize preloaded data
+        zonas = zonas.map(z=>({ ...z, Trecho: sanitizeField(z.Trecho), Criterio: sanitizeField(z.Criterio), Motivo: sanitizeField(z.Motivo) }));
+      }catch(e){ zonas=[]; } setBaseStatus(); })();
     
     const LS_KEY='zq_base_local_v5_2';
     function saveLocal(){ if(Array.isArray(zonas) && zonas.length>0){ try{ localStorage.setItem(LS_KEY, JSON.stringify(zonas)); document.getElementById('fileInfo').textContent='Base salva localmente.'; }catch(e){ document.getElementById('fileInfo').textContent='Falha ao salvar base local.'; } } else { document.getElementById('fileInfo').textContent='Nada para salvar.'; } }
@@ -7679,7 +7684,7 @@
       
       const locoAbs=toAbsFromKm(kmLocomotiva); const caudaAbs=toAbsFromKm(tipo==='aumentando'?kmLocomotiva-comprimentoKm:kmLocomotiva+comprimentoKm); const [tIniAbs,tFimAbs]=normalizeInterval(locoAbs, caudaAbs);
       const lista=zonas
-        .filter(z=>{ const t=String(z.Trecho).toUpperCase(); const tokens=String(filtroSB).toUpperCase().trim().split(/\s+/); return tokens.every(tok => tok==='' || t.includes(tok)); })
+        .filter(z=>{ const t=sanitizeField(z.Trecho).toUpperCase(); const tokens=String(filtroSB).toUpperCase().trim().split(/\s+/); return tokens.every(tok => tok==='' || t.includes(tok)); })
         .map(z=>{ const status=((tIniAbs<=z.fimAbs)&&(tFimAbs>=z.iniAbs))?'EM ZONA QUENTE':'FORA'; const p=status==='EM ZONA QUENTE'?percentInside(tIniAbs,tFimAbs,z.iniAbs,z.fimAbs):0; return {...z, percent:p, status}; })
         .sort((a,b)=>b.percent-a.percent);
       
@@ -7687,10 +7692,8 @@
       const multiBox = document.getElementById('multiHotBox');
       if(hotList.length>1){ const items = hotList.map(z=>`<li>${composeLine(z.Trecho, z.Criterio, z.Motivo)}</li>`).join(''); multiBox.innerHTML = `<div class='font-bold mb-1'>Composição em mais de uma Zona Quente (${hotList.length}):</div><ul class='list-disc ml-6'>${items}</ul>`; multiBox.classList.remove('hidden'); } else { multiBox.classList.add('hidden'); multiBox.innerHTML=''; }
       
-      const zonasDiv=document.getElementById('zonasResultado'); const tbody=document.getElementById('zonasTableBody'); const countEl=document.getElementById('zonasCount'); tbody.innerHTML=''; zonasDiv.classList.remove('hidden');
-      if(lista.length===0){ countEl.textContent='0 zonas'; tbody.innerHTML=`<tr><td colspan='8' class='text-center text-gray-600'>Sem zonas cadastradas para este posicionamento/filtro.</td></tr>`; return; }
-      
-      countEl.textContent=`${lista.length} zonas (${baseOrigem})`;
+      const zonasDiv=document.getElementById('zonasResultado'); const tbody=document.getElementById('zonasTableBody'); tbody.innerHTML=''; zonasDiv.classList.remove('hidden');
+      if(lista.length===0){ tbody.innerHTML=`<tr><td colspan='8' class='text-center text-gray-600'>Sem zonas cadastradas para este posicionamento/filtro.</td></tr>`; return; }
       
       for (const z of lista) {
         const iniFmt  = formatKmMFromAbs(z.iniAbs);
@@ -7724,11 +7727,11 @@
               </div>
             </strong>
           </td>
-          <td style="${bgStyle}">${z.Trecho ?? ''}</td>
+          <td style="${bgStyle}">${sanitizeField(z.Trecho) ?? ''}</td>
           <td style="${bgStyle}">${iniFmt}</td>
           <td style="${bgStyle}">${fimFmt}</td>
-          <td style="${bgStyle}">${z.Criterio ?? ''}</td>
-          <td style="${bgStyle}">${z.Motivo ?? ''}</td>
+          <td style="${bgStyle}">${sanitizeField(z.Criterio) ?? ''}</td>
+          <td style="${bgStyle}">${sanitizeField(z.Motivo) ?? ''}</td>
           <td style="${bgStyle}">${percStr}</td>
           <td style="${bgStyle}">${z.ID ?? ''}</td>
         `;
