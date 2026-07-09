@@ -7133,13 +7133,7 @@
     "fimAbs": 856690.0,
     "Criterio": "Tombamento em áreas de alta densidade populacional",
     "Motivo": "Edificações"
-  },
-  {"ID": "ZQ-893",
-    "Trecho": "ECN-EVN",
-    "iniAbs": 856520.0,
-    "fimAbs": 856699.0,
-    "Criterio": "Tombamento em áreas de alta densidade populacional",
-    "Motivo": "Edificações"}
+  }
 ]
   
  
