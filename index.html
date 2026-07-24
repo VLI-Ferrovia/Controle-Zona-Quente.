@@ -659,7 +659,7 @@
 ]</script>
   
   <script>
-    function parseNumberBR(val){ if(val===undefined||val===null) return NaN; if(typeof val==='number') return val; let s=String(val).trim(); if(s==='') return NaN; s=s.replace(/\s+/g,''); s=s.replace(/\./g,''); s=s.replace(/,/g,'.'); const n=Number(s); return Number.isFinite(n)?n:NaN; }
+    function parseNumberBR(val){ if(val===undefined||val===null) return NaN; if(typeof val==='number') return val; let s=String(val).trim(); if(s==='') return NaN; s=s.replace(/[\s,+.]/g,'.'); const lastDotIndex=s.lastIndexOf('.'); if(lastDotIndex!==-1){ s=s.substring(0,lastDotIndex).replace(/\./g,'')+'.'+s.substring(lastDotIndex+1); } const n=Number(s); return Number.isFinite(n)?n:NaN; }
     function toAbsFromKm(kmDecimal){ const kmNum=parseNumberBR(kmDecimal); if(!Number.isFinite(kmNum)) return NaN; return kmNum*1000; }
     function normalizeInterval(a,b){ return (a<=b)?[a,b]:[b,a]; }
     function percentInside(ti,tf,zi,zf){ const interIni=Math.max(ti,zi); const interFim=Math.min(tf,zf); const interLen=Math.max(0, interFim-interIni); const tremLen=Math.max(1, tf-ti); return interLen/tremLen; }
@@ -738,12 +738,19 @@
       const normalize = s => String(s||'').toUpperCase().replace(/[\s\.\-_,;:\/\\]+/g, '');
 
       const t = normalize(trecho);
-      const query = normalize(filtro);
+      const q = normalize(filtro);
 
-      if(!query) return true;
+      if(!q) return true;
 
-      // Busca por substring (parcial) - ex: ZUB encontra ZUBZMN, ZUB-ZMN, etc
-      if(t.includes(query)) return true;
+      // Correspondência direta (substring)
+      if(t.includes(q)) return true;
+
+      // Heurística por prefixo: exigir que os primeiros 3 caracteres do filtro
+      // apareçam como substring contígua no trecho (evita matches muito amplos)
+      if(q.length >= 3){
+        const qPref3 = q.slice(0,3);
+        if(t.includes(qPref3)) return true;
+      }
 
       // Extrai partes originais separadas por qualquer separador para lógica de reverso
       const parts = String(filtro||'').toUpperCase().split(/[\s\.\-_,;:\/\\]+/).filter(Boolean);
@@ -755,13 +762,12 @@
       }
 
       // Se o usuário digitou sem separadores (ex: ET2ETH), tentar todas as divisões possíveis
-      // e verificar se a versão invertida ou as duas partes existem no trecho.
       if(parts.length === 1){
-        const q = query;
-        if(q.length >= 4){ // evitar splits muito pequenos que geram falsos positivos
-          for(let i=2; i<=q.length-2; i++){
-            const a = q.slice(0,i);
-            const b = q.slice(i);
+        const qq = q;
+        if(qq.length >= 4){ // evitar splits muito pequenos que geram falsos positivos
+          for(let i=2; i<=qq.length-2; i++){
+            const a = qq.slice(0,i);
+            const b = qq.slice(i);
             if(a.length < 1 || b.length < 1) continue;
             // reverso concatenado
             if(t.includes(b + a)) return true;
@@ -788,7 +794,16 @@
       
       const locoAbs=toAbsFromKm(kmLocomotiva); const caudaAbs=toAbsFromKm(tipo==='aumentando'?kmLocomotiva-comprimentoKm:kmLocomotiva+comprimentoKm); const [tIniAbs,tFimAbs]=normalizeInterval(locoAbs, caudaAbs);
       const lista=zonas
-        .filter(z=>trechoMatches(z.Trecho, filtroSB))
+        .filter(z=>{
+          const matchSB = trechoMatches(z.Trecho, filtroSB);
+          const overlapKM = (tIniAbs <= z.fimAbs) && (tFimAbs >= z.iniAbs);
+          // Se o usuário especificou um filtro SB, exigir matchSB.
+          // Apenas quando o filtro estiver vazio/blank, incluir por sobreposição de KM.
+          if(String(filtroSB||'').trim() !== ''){
+            return matchSB;
+          }
+          return matchSB || overlapKM;
+        })
         .map(z=>{ const status=((tIniAbs<=z.fimAbs)&&(tFimAbs>=z.iniAbs))?'EM ZONA QUENTE':'FORA'; const p=status==='EM ZONA QUENTE'?percentInside(tIniAbs,tFimAbs,z.iniAbs,z.fimAbs):0; return {...z, percent:p, status}; })
         .sort((a,b)=>b.percent-a.percent);
       
