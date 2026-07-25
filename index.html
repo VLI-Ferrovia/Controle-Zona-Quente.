@@ -734,50 +734,30 @@
     });
     
     function trechoMatches(trecho, filtro){
-      // Normaliza removendo separadores, mantendo letras e números
       const normalize = s => String(s||'').toUpperCase().replace(/[\s\.\-_,;:\/\\]+/g, '');
-
       const t = normalize(trecho);
       const q = normalize(filtro);
 
       if(!q) return true;
 
-      // Correspondência direta (substring)
-      if(t.includes(q)) return true;
+      // Regra 2/3: pesquisa com duas SBs (6 caracteres)
+      // Buscar por origem, trecho completo e destino.
+      if(q.length >= 6){
+        const origem = q.slice(0, 3);
+        const destino = q.slice(3, 6);
+        const trechoCompleto = origem + destino;
+        const trechoReverso = destino + origem;
 
-      // Heurística por prefixo: exigir que os primeiros 3 caracteres do filtro
-      // apareçam como substring contígua no trecho (evita matches muito amplos)
-      if(q.length >= 3){
-        const qPref3 = q.slice(0,3);
-        if(t.includes(qPref3)) return true;
+        if(t.includes(origem)) return true;
+        if(t.includes(destino)) return true;
+        if(t.includes(trechoCompleto)) return true;
+        if(t.includes(trechoReverso)) return true;
+        return false;
       }
 
-      // Extrai partes originais separadas por qualquer separador para lógica de reverso
-      const parts = String(filtro||'').toUpperCase().split(/[\s\.\-_,;:\/\\]+/).filter(Boolean);
-
-      // Se há exatamente 2 partes (ex: ET2 ETH ou ETH-ET2), tenta verificar reverso
-      if(parts.length === 2){
-        const reversed = normalize(`${parts[1]}${parts[0]}`);
-        if(t.includes(reversed)) return true;
-      }
-
-      // Se o usuário digitou sem separadores (ex: ET2ETH), tentar todas as divisões possíveis
-      if(parts.length === 1){
-        const qq = q;
-        if(qq.length >= 4){ // evitar splits muito pequenos que geram falsos positivos
-          for(let i=2; i<=qq.length-2; i++){
-            const a = qq.slice(0,i);
-            const b = qq.slice(i);
-            if(a.length < 1 || b.length < 1) continue;
-            // reverso concatenado
-            if(t.includes(b + a)) return true;
-            // ambas partes presentes em qualquer ordem (não necessariamente contíguas)
-            if(t.includes(a) && t.includes(b)) return true;
-          }
-        }
-      }
-
-      return false;
+      // Regra 1: pesquisa com uma SB (3 caracteres)
+      const sb = q.slice(0, 3);
+      return t.includes(sb);
     }
 
     function calcular(tipo){
